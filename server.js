@@ -69,7 +69,7 @@ res.download(file)
 
 }catch(err){
 
-console.error("Conversion error:",err)
+console.error("Conversion error:", err.stack)
 
 res.status(500).send("Conversion failed")
 
