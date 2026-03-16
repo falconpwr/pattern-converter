@@ -1,36 +1,29 @@
-const { fromPath } = require("pdf2pic")
+const sharp = require("sharp")
+const fs = require("fs")
 
 module.exports = async function(pdfPath){
 
-const convert = fromPath(pdfPath, {
-density: 300,
-saveFilename: "page",
-savePath: "uploads",
-format: "png",
-width: 2000,
-height: 2000
-})
-
-const pages = []
-
-for(let i=1;i<=10;i++){
+const output = "uploads/page-1.png"
 
 try{
 
-const res = await convert(i)
+await sharp(pdfPath, {
+density: 300,
+page: 0
+})
+.png()
+.toFile(output)
 
-if(res && res.path){
-pages.push(res.path)
+console.log("PDF rendered:", output)
+
+return [output]
+
+}catch(err){
+
+console.error("PDF render error:", err)
+
+return []
+
 }
-
-}catch(e){
-break
-}
-
-}
-
-console.log("Rendered pages:", pages)
-
-return pages
 
 }
