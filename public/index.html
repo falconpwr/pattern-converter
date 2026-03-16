@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Pattern Converter</title>
+
+<style>
+
+.progress{
+width:400px;
+height:25px;
+background:#eee
+}
+
+.bar{
+height:100%;
+width:0%;
+background:#4CAF50
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Cross Stitch Converter</h2>
+
+<input type="file" id="file">
+
+<br><br>
+
+<select id="format">
+<option value="pdf">PDF</option>
+<option value="xsd">XSD</option>
+</select>
+
+<br><br>
+
+<button onclick="upload()">Convert</button>
+
+<br><br>
+
+<div class="progress">
+<div class="bar" id="bar"></div>
+</div>
+
+<div id="stats">0 / 0 cells</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="app.js"></script>
+
+</body>
+
+</html>
