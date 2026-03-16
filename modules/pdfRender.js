@@ -1,6 +1,6 @@
 const fs = require("fs")
 const path = require("path")
-const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js")
+const pdfjsLib = require("pdfjs-dist")
 const { createCanvas } = require("canvas")
 
 module.exports = async function(pdfPath){
