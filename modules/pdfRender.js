@@ -1,32 +1,43 @@
-const { fromPath } = require("pdf2pic")
 const fs = require("fs")
+const path = require("path")
+const sharp = require("sharp")
+const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js")
 
-module.exports = async function(pdf) {
+module.exports = async function(pdfPath){
 
-const convert = fromPath(pdf, {
-density: 150,
-saveFilename: "page",
-savePath: "uploads",
-format: "png",
-width: 1200,
-height: 1600
-})
+const data = new Uint8Array(fs.readFileSync(pdfPath))
+
+const pdf = await pdfjsLib.getDocument({data}).promise
 
 const pages = []
 
-for(let i=1;i<=20;i++){
+for(let i=1;i<=pdf.numPages;i++){
 
-try{
+const page = await pdf.getPage(i)
 
-const res = await convert(i)
+const viewport = page.getViewport({scale:2})
 
-if(res && res.path){
-pages.push(res.path)
+const canvasFactory = {
+create: function(width, height) {
+const data = new Uint8ClampedArray(width * height * 4)
+return { canvas: { width, height, data }, context: { data } }
+},
+reset: function(){},
+destroy: function(){}
 }
 
-}catch(e){
-break
+const renderContext = {
+canvasContext: canvasFactory.create(viewport.width, viewport.height),
+viewport
 }
+
+await page.render(renderContext).promise
+
+const img = await sharp(Buffer.from(renderContext.canvasContext.data))
+.png()
+.toFile(`uploads/page-${i}.png`)
+
+pages.push(`uploads/page-${i}.png`)
 
 }
 
