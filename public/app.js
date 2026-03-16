@@ -13,29 +13,51 @@ data.processed+" / "+data.total+" cells"
 
 async function upload(){
 
-const file=document.getElementById("file").files[0]
-const format=document.getElementById("format").value
+const file = document.getElementById("file").files[0]
+const format = document.getElementById("format").value
 
-const form=new FormData()
+if(file.type === "application/pdf"){
 
-form.append("file",file)
-form.append("format",format)
-form.append("socketId",socket.id)
+const pdfjsLib = window["pdfjsLib"]
 
-const res=await fetch("/convert",{
+const data = await file.arrayBuffer()
+const pdf = await pdfjsLib.getDocument({data}).promise
+
+const page = await pdf.getPage(1)
+const viewport = page.getViewport({scale:3})
+
+const canvas = document.createElement("canvas")
+const ctx = canvas.getContext("2d")
+
+canvas.width = viewport.width
+canvas.height = viewport.height
+
+await page.render({
+canvasContext: ctx,
+viewport
+}).promise
+
+const blob = await new Promise(r => canvas.toBlob(r))
+
+const form = new FormData()
+form.append("file", blob, "page.png")
+form.append("format", format)
+form.append("socketId", socket.id)
+
+const res = await fetch("/convert",{
 method:"POST",
 body:form
 })
 
-const blob=await res.blob()
+const result = await res.blob()
 
-const url=URL.createObjectURL(blob)
+const url = URL.createObjectURL(result)
 
-const a=document.createElement("a")
-
-a.href=url
-a.download=format==="xsd"?"pattern.xsd":"pattern.pdf"
-
+const a = document.createElement("a")
+a.href = url
+a.download = "pattern.pdf"
 a.click()
+
+}
 
 }
