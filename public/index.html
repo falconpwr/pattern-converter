@@ -49,8 +49,15 @@ background:#4CAF50
 <div id="stats">0 / 0 cells</div>
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="app.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js"></script>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js";
+</script>
+
+<script src="app.js"></script>
 
 </body>
 
