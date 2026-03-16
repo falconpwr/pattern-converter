@@ -9,6 +9,7 @@ const data = new Uint8Array(fs.readFileSync(pdfPath))
 
 const pdf = await pdfjsLib.getDocument({data}).promise
 
+  
 const pages = []
 
 for(let i=1;i<=pdf.numPages;i++){
@@ -40,7 +41,7 @@ const img = await sharp(Buffer.from(renderContext.canvasContext.data))
 pages.push(`uploads/page-${i}.png`)
 
 }
-
+console.log("Generated images:", pages)
 return pages
 
 }
