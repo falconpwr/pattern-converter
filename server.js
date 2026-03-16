@@ -23,17 +23,7 @@ app.post("/convert",upload.single("file"),async(req,res)=>{
 const socket=io.sockets.sockets.get(req.body.socketId)
 const format=req.body.format
 
-const pages = await renderPDF(req.file.path)
-
-console.log("PDF pages detected:", pages.length)
-
-if(!pages || pages.length === 0){
-throw new Error("PDF conversion failed – no pages generated")
-}
-
-if(!pages || pages.length === 0){
-throw new Error("PDF pages not detected")
-}
+const pages=await renderPDF(req.file.path)
 
 let processed=0
 let total=0
