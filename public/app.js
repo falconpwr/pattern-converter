@@ -12,7 +12,7 @@ data.processed+" / "+data.total+" cells"
 })
 
 async function upload(){
-
+const pdfjsLib = window.pdfjsLib
 const file = document.getElementById("file").files[0]
 const format = document.getElementById("format").value
 
