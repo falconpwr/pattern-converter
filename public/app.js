@@ -18,7 +18,7 @@ const format = document.getElementById("format").value
 
 if(file.type === "application/pdf"){
 
-const pdfjsLib = window["pdfjsLib"]
+const pdfjsLib = window.pdfjsLib
 
 const data = await file.arrayBuffer()
 const pdf = await pdfjsLib.getDocument({data}).promise
