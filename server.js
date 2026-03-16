@@ -20,10 +20,16 @@ app.use(express.static("public"))
 
 app.post("/convert",upload.single("file"),async(req,res)=>{
 
+try{
+
 const socket=io.sockets.sockets.get(req.body.socketId)
 const format=req.body.format
 
 const pages=await renderPDF(req.file.path)
+
+if(!pages || pages.length===0){
+throw new Error("PDF rendering failed")
+}
 
 let processed=0
 let total=0
@@ -60,6 +66,14 @@ else
 file=await buildPDF(result)
 
 res.download(file)
+
+}catch(err){
+
+console.error("Conversion error:",err)
+
+res.status(500).send("Conversion failed")
+
+}
 
 })
 
