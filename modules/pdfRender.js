@@ -1,39 +1,35 @@
-const fs = require("fs")
-const path = require("path")
-const pdfjsLib = require("pdfjs-dist")
-const { createCanvas } = require("canvas")
+const { fromPath } = require("pdf2pic")
 
 module.exports = async function(pdfPath){
 
-const data = new Uint8Array(fs.readFileSync(pdfPath))
-
-const pdf = await pdfjsLib.getDocument({data}).promise
+const convert = fromPath(pdfPath, {
+density: 300,
+saveFilename: "page",
+savePath: "uploads",
+format: "png",
+width: 2000,
+height: 2000
+})
 
 const pages = []
 
-for(let i=1;i<=pdf.numPages;i++){
+for(let i=1;i<=10;i++){
 
-const page = await pdf.getPage(i)
+try{
 
-const viewport = page.getViewport({ scale:2 })
+const res = await convert(i)
 
-const canvas = createCanvas(viewport.width, viewport.height)
-const context = canvas.getContext("2d")
+if(res && res.path){
+pages.push(res.path)
+}
 
-await page.render({
-canvasContext: context,
-viewport
-}).promise
-
-const output = `uploads/page-${i}.png`
-
-fs.writeFileSync(output, canvas.toBuffer("image/png"))
-
-pages.push(output)
+}catch(e){
+break
+}
 
 }
 
-console.log("PDF rendered pages:", pages)
+console.log("Rendered pages:", pages)
 
 return pages
 
