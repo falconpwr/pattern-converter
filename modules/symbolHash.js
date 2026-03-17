@@ -1,5 +1,16 @@
 module.exports = async function(cells, progress){
 
+  const SYMBOLS = [
+    "A","B","C","D","E","F","G","H","I","J",
+    "K","L","M","N","O","P","Q","R","S","T",
+    "U","V","W","X","Y","Z",
+    "a","b","c","d","e","f","g","h","i","j",
+    "k","l","m","n","o","p","q","r","s","t",
+    "u","v","w","x","y","z",
+    "1","2","3","4","5","6","7","8","9",
+    "!","@","#","$","%","&","*","+","=","?"
+  ]
+
   const map = new Map()
   let id = 0
 
@@ -16,7 +27,7 @@ module.exports = async function(cells, progress){
 
       const cell = cells[y][x]
 
-      // 🔥 LEPSZY HASH – średnia koloru
+      // 🔥 średni kolor
       let r=0,g=0,b=0
 
       for(let i=0;i<cell.length;i+=4){
@@ -34,12 +45,16 @@ module.exports = async function(cells, progress){
       const hash = `${r}-${g}-${b}`
 
       if(!map.has(hash)){
-        map.set(hash, String.fromCharCode(33 + id))
+
+        if(id >= SYMBOLS.length){
+          throw new Error("Za dużo kolorów (limit symboli)")
+        }
+
+        map.set(hash, SYMBOLS[id])
         id++
       }
 
       row.push(map.get(hash))
-
     }
 
     result.push(row)
