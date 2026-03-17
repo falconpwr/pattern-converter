@@ -29,7 +29,7 @@ function hamming(a, b) {
   return d;
 }
 
-function buildSymbolMap(cells, cellSize) {
+function buildSymbolMap(cells) {
   const symbols = [];
   const grid = [];
   const counts = {};
