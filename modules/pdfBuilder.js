@@ -1,56 +1,56 @@
 const { PDFDocument } = require("pdf-lib")
-const fs = require("fs")
-const path = require("path")
 
-const CELL_SIZE = 18
+const CELL_SIZE = 14
+const CELLS_PER_PAGE = 50   // 🔥 kluczowa zmiana
 
-module.exports = async function(pages){
+module.exports = async function (pages) {
 
   const pdf = await PDFDocument.create()
-
-  // bezpieczna czcionka
   const font = await pdf.embedStandardFont("Helvetica")
 
-  if(!fs.existsSync("outputs")){
-    fs.mkdirSync("outputs")
-  }
+  for (const grid of pages) {
 
-  for(const grid of pages){
-
-    const cols = grid[0].length
     const rows = grid.length
+    const cols = grid[0].length
 
-    const width = cols * CELL_SIZE + 40
-    const height = rows * CELL_SIZE + 40
+    // 🔥 dzielenie na "kafelki"
+    for (let startY = 0; startY < rows; startY += CELLS_PER_PAGE) {
+      for (let startX = 0; startX < cols; startX += CELLS_PER_PAGE) {
 
-    const page = pdf.addPage([width, height])
+        const page = pdf.addPage([
+          CELLS_PER_PAGE * CELL_SIZE + 100,
+          CELLS_PER_PAGE * CELL_SIZE + 100
+        ])
 
-    for(let y=0; y<rows; y++){
-      for(let x=0; x<cols; x++){
+        for (let y = 0; y < CELLS_PER_PAGE; y++) {
+          for (let x = 0; x < CELLS_PER_PAGE; x++) {
 
-        let symbol = grid[y][x]
+            const globalY = startY + y
+            const globalX = startX + x
 
-        // 🔥 zabezpieczenie
-        if(!symbol || typeof symbol !== "string"){
-          symbol = "."
+            if (globalY >= rows || globalX >= cols) continue
+
+            const symbol = grid[globalY][globalX]
+
+            const posX = 50 + x * CELL_SIZE
+            const posY = page.getHeight() - (50 + y * CELL_SIZE)
+
+            page.drawRectangle({
+              x: posX,
+              y: posY,
+              width: CELL_SIZE,
+              height: CELL_SIZE,
+              borderWidth: (globalX % 10 === 0 || globalY % 10 === 0) ? 1 : 0.2
+            })
+
+            page.drawText(symbol, {
+              x: posX + CELL_SIZE / 4,
+              y: posY + CELL_SIZE / 4,
+              size: CELL_SIZE * 0.6,
+              font
+            })
+          }
         }
-
-        const posX = 20 + x * CELL_SIZE
-        const posY = height - (20 + y * CELL_SIZE)
-
-        page.drawRectangle({
-          x: posX,
-          y: posY,
-          width: CELL_SIZE,
-          height: CELL_SIZE,
-          borderWidth: (x%10===0||y%10===0)?1:0.2
-        })
-
-        page.drawText(symbol,{
-          x: posX + 4,
-          y: posY + 4,
-          size: 10
-        })
 
       }
     }
@@ -58,11 +58,7 @@ module.exports = async function(pages){
 
   const bytes = await pdf.save()
 
-  const filePath = path.resolve("outputs/result.pdf")
+  require("fs").writeFileSync("pattern.pdf", bytes)
 
-  fs.writeFileSync(filePath, bytes)
-
-  console.log("PDF SIZE:", bytes.length)
-
-  return filePath
+  return "pattern.pdf"
 }
