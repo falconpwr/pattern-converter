@@ -27,7 +27,6 @@ app.post("/convert", upload.single("file"), async (req, res) => {
     const socket = io.sockets.sockets.get(req.body.socketId)
     const format = req.body.format
 
-    // 🔹 PDF → obraz (albo już obraz z frontendu)
     const pages = await renderPDF(req.file.path)
 
     if (!pages || pages.length === 0) {
@@ -57,16 +56,20 @@ app.post("/convert", upload.single("file"), async (req, res) => {
       total += cells.length * cells[0].length
 
       console.log("START HASH")
-      
-      const matrix = cells // 🔥 pomijamy hash
-      
+
+      const matrix = await hashSymbols(cells, (n) => {
+        processed += n
+
+        if (socket) {
+          socket.emit("progress", { processed, total })
+        }
+      })
+
       console.log("END HASH")
-                                      )
 
       result.push(matrix)
     }
 
-    // 🔹 generowanie pliku
     let file
 
     if (format === "xsd") {
@@ -81,7 +84,6 @@ app.post("/convert", upload.single("file"), async (req, res) => {
       throw new Error("Output file not created")
     }
 
-    // 🔹 wysyłanie pliku
     res.sendFile(path.resolve(file))
 
   } catch (err) {
