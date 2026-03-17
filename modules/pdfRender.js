@@ -1,5 +1,4 @@
 const fs = require('fs');
-const { createCanvas } = require('canvas');
 
 async function renderPDF(filePath) {
   const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
@@ -10,26 +9,12 @@ async function renderPDF(filePath) {
     data,
     useWorkerFetch: false,
     isEvalSupported: false,
-    useSystemFonts: true
+    disableFontFace: true,
+    disableRange: true,
+    disableStream: true
   });
 
   const pdfDoc = await loadingTask.promise;
-
-  const CanvasFactory = {
-    create: (width, height) => {
-      const canvas = createCanvas(width, height);
-      const context = canvas.getContext('2d');
-      return { canvas, context };
-    },
-    reset: (canvasAndContext, width, height) => {
-      canvasAndContext.canvas.width = width;
-      canvasAndContext.canvas.height = height;
-    },
-    destroy: (canvasAndContext) => {
-      canvasAndContext.canvas = null;
-      canvasAndContext.context = null;
-    }
-  };
 
   const pages = [];
 
@@ -38,32 +23,28 @@ async function renderPDF(filePath) {
 
     const viewport = page.getViewport({ scale: 2 });
 
-    const { canvas, context } = CanvasFactory.create(
-      viewport.width,
-      viewport.height
-    );
+    // ❗ FAKE canvas (bez drawImage)
+    const width = Math.floor(viewport.width);
+    const height = Math.floor(viewport.height);
 
-    await page.render({
-      canvasContext: context,
-      viewport,
-      canvasFactory: CanvasFactory
-    }).promise;
+    // pusty buffer (biały)
+    const dataArr = new Uint8ClampedArray(width * height * 4);
 
-    const imageData = context.getImageData(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
+    for (let j = 0; j < dataArr.length; j += 4) {
+      dataArr[j] = 255;
+      dataArr[j + 1] = 255;
+      dataArr[j + 2] = 255;
+      dataArr[j + 3] = 255;
+    }
 
+    // 🔥 tekst działa normalnie
     const textContent = await page.getTextContent();
-
     const text = textContent.items.map(i => i.str).join(' ');
 
     pages.push({
-      width: canvas.width,
-      height: canvas.height,
-      data: imageData.data,
+      width,
+      height,
+      data: dataArr,
       text
     });
   }
