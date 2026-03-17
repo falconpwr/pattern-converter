@@ -42,6 +42,13 @@ module.exports = async function(cells, progress){
       g = Math.round(g/count)
       b = Math.round(b/count)
 
+      // 🔥 REDUKCJA KOLORÓW
+      const STEP = 32
+      
+      r = Math.round(r / STEP) * STEP
+      g = Math.round(g / STEP) * STEP
+      b = Math.round(b / STEP) * STEP
+      
       const hash = `${r}-${g}-${b}`
 
       if(!map.has(hash)){
