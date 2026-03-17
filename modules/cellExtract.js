@@ -2,37 +2,49 @@ const sharp = require("sharp")
 
 module.exports = async function(image, grid){
 
-if(!grid || !grid.cell || grid.cell < 8){
-throw new Error("Invalid grid cell size")
-}
+  if(!grid || !grid.cell){
+    throw new Error("Invalid grid")
+  }
 
-const cells = []
+  const { data, info } = await sharp(image)
+    .raw()
+    .toBuffer({ resolveWithObject: true })
 
-for(let y=0;y<grid.rows;y++){
+  const width = info.width
+  const height = info.height
 
-const row=[]
+  const cellSize = grid.cell
 
-for(let x=0;x<grid.cols;x++){
+  const cells = []
 
-const buf = await sharp(image)
-.extract({
-left: x * grid.cell,
-top: y * grid.cell,
-width: grid.cell,
-height: grid.cell
-})
-.resize(16,16)
-.raw()
-.toBuffer()
+  for(let y = 0; y < grid.rows; y++){
 
-row.push(buf)
+    const row = []
 
-}
+    for(let x = 0; x < grid.cols; x++){
 
-cells.push(row)
+      const cell = []
 
-}
+      for(let cy = 0; cy < cellSize; cy++){
+        for(let cx = 0; cx < cellSize; cx++){
 
-return cells
+          const px = x * cellSize + cx
+          const py = y * cellSize + cy
 
+          if(px >= width || py >= height) continue
+
+          const idx = (py * width + px) * 3 // RGB
+          cell.push(data[idx]) // tylko jeden kanał wystarczy
+        }
+      }
+
+      row.push(cell)
+    }
+
+    cells.push(row)
+  }
+
+  console.log("CELLS DONE")
+
+  return cells
 }
