@@ -1,4 +1,4 @@
-const { PDFDocument } = require("pdf-lib")
+const { PDFDocument, rgb } = require("pdf-lib")
 
 const CELL_SIZE = 14
 const CELLS_PER_PAGE = 50   // 🔥 kluczowa zmiana
@@ -40,7 +40,8 @@ module.exports = async function (pages) {
               y: posY,
               width: CELL_SIZE,
               height: CELL_SIZE,
-              borderWidth: (globalX % 10 === 0 || globalY % 10 === 0) ? 1 : 0.2
+              borderWidth: (x%10===0||y%10===0)?1:0.2,
+              color: rgb(1,1,1) // 👈 BIAŁE TŁO
             })
 
             page.drawText(symbol, {
