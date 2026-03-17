@@ -18,13 +18,11 @@ const app = express()
 const server = http.createServer(app)
 const io = new Server(server)
 
-const fromPage = parseInt(req.body.fromPage) || 1
-const toPage = parseInt(req.body.toPage) || fromPage
-
 app.use(express.static("public"))
 
 app.post("/convert", upload.single("file"), async (req, res) => {
-
+const fromPage = parseInt(req.body.fromPage) || 1
+const toPage = parseInt(req.body.toPage) || fromPage
   try {
 
     const socket = io.sockets.sockets.get(req.body.socketId)
