@@ -1,95 +1,102 @@
-const express=require("express")
-const multer=require("multer")
-const http=require("http")
-const {Server}=require("socket.io")
+const express = require("express")
+const multer = require("multer")
+const http = require("http")
+const { Server } = require("socket.io")
+const path = require("path")
+const fs = require("fs")
 
-const renderPDF=require("./modules/pdfRender")
-const detectGrid=require("./modules/gridDetect")
-const extractCells=require("./modules/cellExtract")
-const hashSymbols=require("./modules/symbolHash")
-const buildPDF=require("./modules/pdfBuilder")
-const buildXSD=require("./modules/xsdBuilder")
+const renderPDF = require("./modules/pdfRender")
+const detectGrid = require("./modules/gridDetect")
+const extractCells = require("./modules/cellExtract")
+const hashSymbols = require("./modules/symbolHash")
+const buildPDF = require("./modules/pdfBuilder")
+const buildXSD = require("./modules/xsdBuilder")
 
-const upload=multer({dest:"uploads/"})
+const upload = multer({ dest: "uploads/" })
 
-const app=express()
-const server=http.createServer(app)
-const io=new Server(server)
+const app = express()
+const server = http.createServer(app)
+const io = new Server(server)
 
 app.use(express.static("public"))
 
-app.post("/convert",upload.single("file"),async(req,res)=>{
+app.post("/convert", upload.single("file"), async (req, res) => {
 
-try{
+  try {
 
-const socket=io.sockets.sockets.get(req.body.socketId)
-const format=req.body.format
+    const socket = io.sockets.sockets.get(req.body.socketId)
+    const format = req.body.format
 
-const pages=await renderPDF(req.file.path)
+    // 🔹 PDF → obraz (albo już obraz z frontendu)
+    const pages = await renderPDF(req.file.path)
 
-if(!pages || pages.length===0){
-throw new Error("PDF rendering failed")
-}
+    if (!pages || pages.length === 0) {
+      throw new Error("PDF rendering failed")
+    }
 
-let processed=0
-let total=0
+    let processed = 0
+    let total = 0
 
-const result=[]
+    const result = []
 
-for(const page of pages){
+    for (const page of pages) {
 
-const grid = await detectGrid(page)
+      const grid = await detectGrid(page)
+      console.log("GRID:", grid)
 
-console.log("GRID:", grid)
+      if (!grid || !grid.cell) {
+        throw new Error("Grid detection failed")
+      }
 
-const cells = await extractCells(page,grid)
+      const cells = await extractCells(page, grid)
 
-if(!cells || cells.length === 0){
-throw new Error("Cell extraction failed – grid not detected")
-}
+      if (!cells || cells.length === 0 || !cells[0]) {
+        throw new Error("Cell extraction failed – grid not detected")
+      }
 
-if(!cells || cells.length === 0 || !cells[0]){
-throw new Error("Cell extraction failed – grid not detected")
-}
+      total += cells.length * cells[0].length
 
-total += cells.length * cells[0].length
+      const matrix = await hashSymbols(cells, (n) => {
 
-const matrix=await hashSymbols(cells,(n)=>{
+        processed += n
 
-processed+=n
+        if (socket) {
+          socket.emit("progress", { processed, total })
+        }
 
-if(socket){
-socket.emit("progress",{processed,total})
-}
+      })
+
+      result.push(matrix)
+    }
+
+    // 🔹 generowanie pliku
+    let file
+
+    if (format === "xsd") {
+      file = await buildXSD(result)
+    } else {
+      file = await buildPDF(result)
+    }
+
+    console.log("OUTPUT FILE:", file)
+
+    if (!file || !fs.existsSync(file)) {
+      throw new Error("Output file not created")
+    }
+
+    // 🔹 wysyłanie pliku
+    res.sendFile(path.resolve(file))
+
+  } catch (err) {
+
+    console.error("Conversion error:", err.stack)
+
+    res.status(500).send(err.stack)
+
+  }
 
 })
 
-result.push(matrix)
-
-}
-
-let file
-
-if(format==="xsd")
-file=await buildXSD(result)
-else
-file=await buildPDF(result)
-
-console.log("OUTPUT FILE:", file)
-
-res.sendFile(require("path").resolve(file))
-
-}catch(err){
-
-console.error("Conversion error:", err.stack)
-
-res.status(500).send("Conversion failed")
-
-}
-
-})
-
-server.listen(process.env.PORT||3000,()=>{
-console.log("Server started")
-res.send("DONE")
+server.listen(process.env.PORT || 3000, () => {
+  console.log("Server started")
 })
