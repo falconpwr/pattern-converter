@@ -31,23 +31,33 @@ app.post('/upload', upload.single('file'), async (req, res) => {
   const pages = await renderPDF(filePath);
 
   // ===== WZÓR =====
-  let allCells = [];
-  let gridData;
+let allCells = [];
 
-  for (let i = fromPage - 1; i < toPage; i++) {
-    const page = pages[i];
+for (let i = fromPage - 1; i < toPage; i++) {
+  const page = pages[i];
 
-    gridData = detectGrid(page);
+  const gridData = detectGrid(page);
 
-    const cells = extractCells(
-      page.data,
-      page.width,
-      page.height,
-      gridData
-    );
-
-    allCells = allCells.concat(cells);
+  if (!gridData.cell || isNaN(gridData.cell)) {
+    console.log('Skipping page - bad grid');
+    continue;
   }
+
+  const cells = extractCells(
+    page.data,
+    page.width,
+    page.height,
+    gridData
+  );
+
+  // 🔥 KLUCZ: zapisujemy też cell per page
+  for (let cell of cells) {
+    allCells.push({
+      data: cell,
+      cellSize: gridData.cell
+    });
+  }
+}
 
   io.emit('progress', 40);
 
