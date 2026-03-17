@@ -1,77 +1,61 @@
-module.exports = async function(cells, progress){
+function toGray(r, g, b) {
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
 
-  const SYMBOLS = [
-    "A","B","C","D","E","F","G","H","I","J",
-    "K","L","M","N","O","P","Q","R","S","T",
-    "U","V","W","X","Y","Z",
-    "a","b","c","d","e","f","g","h","i","j",
-    "k","l","m","n","o","p","q","r","s","t",
-    "u","v","w","x","y","z",
-    "1","2","3","4","5","6","7","8","9",
-    "!","@","#","$","%","&","*","+","=","?"
-  ]
+function getSignature(cell, cellSize) {
+  const size = 16;
+  const step = Math.floor(cellSize / size);
 
-  const map = new Map()
-  let id = 0
+  let bits = [];
 
-  const rows = cells.length
-  const cols = cells[0].length
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const px = (y * step * cellSize + x * step) * 4;
 
-  const result = []
+      const g = toGray(cell[px], cell[px+1], cell[px+2]);
 
-  for(let y=0;y<rows;y++){
-
-    const row=[]
-
-    for(let x=0;x<cols;x++){
-
-      const cell = cells[y][x]
-
-      // 🔥 średni kolor
-      let r=0,g=0,b=0
-
-      for(let i=0;i<cell.length;i+=4){
-        r+=cell[i]
-        g+=cell[i+1]
-        b+=cell[i+2]
-      }
-
-      const count = cell.length/4
-
-      r = Math.round(r/count)
-      g = Math.round(g/count)
-      b = Math.round(b/count)
-
-      // 🔥 REDUKCJA KOLORÓW
-      const STEP = 32
-      
-      r = Math.round(r / STEP) * STEP
-      g = Math.round(g / STEP) * STEP
-      b = Math.round(b / STEP) * STEP
-      
-      const hash = `${r}-${g}-${b}`
-
-      if(!map.has(hash)){
-
-        if(id >= SYMBOLS.length){
-          throw new Error("Za dużo kolorów (limit symboli)")
-        }
-
-        map.set(hash, SYMBOLS[id])
-        id++
-      }
-
-      row.push(map.get(hash))
-    }
-
-    result.push(row)
-
-    if(progress){
-      progress(cols)
+      bits.push(g < 200 ? 1 : 0);
     }
   }
 
-  console.log("SYMBOLS:", map.size)
-
-  return result
+  return bits.join('');
 }
+
+function hamming(a, b) {
+  let d = 0;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) d++;
+  }
+  return d;
+}
+
+function buildSymbolMap(cells, cellSize) {
+  const symbols = [];
+  const grid = [];
+  const counts = {};
+
+  for (let cell of cells) {
+    const sig = getSignature(cell, cellSize);
+
+    let found = null;
+
+    for (let s of symbols) {
+      if (hamming(sig, s.sig) < 30) {
+        found = s;
+        break;
+      }
+    }
+
+    if (!found) {
+      found = { id: symbols.length, sig };
+      symbols.push(found);
+    }
+
+    grid.push(found.id);
+    counts[found.id] = (counts[found.id] || 0) + 1;
+  }
+
+  return { grid, counts };
+}
+
+module.exports = { buildSymbolMap };
