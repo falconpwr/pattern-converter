@@ -2,64 +2,67 @@ const { PDFDocument } = require("pdf-lib")
 const fs = require("fs")
 const path = require("path")
 
-const CELL_SIZE = 22
+const CELL_SIZE = 18
 
 module.exports = async function(pages){
 
-const pdf = await PDFDocument.create()
+  const pdf = await PDFDocument.create()
 
-const fontBytes = fs.readFileSync("fonts/DejaVuSans.ttf")
-const font = await pdf.embedFont(fontBytes)
+  // bezpieczna czcionka
+  const font = await pdf.embedFont(PDFDocument.PDFFont ? PDFDocument.PDFFont : await pdf.embedStandardFont("Helvetica"))
 
-// upewnij się że folder istnieje
-if(!fs.existsSync("outputs")){
-fs.mkdirSync("outputs")
-}
+  if(!fs.existsSync("outputs")){
+    fs.mkdirSync("outputs")
+  }
 
-for(const grid of pages){
+  for(const grid of pages){
 
-const cols = grid[0].length
-const rows = grid.length
+    const cols = grid[0].length
+    const rows = grid.length
 
-const width = cols * CELL_SIZE + 100
-const height = rows * CELL_SIZE + 100
+    const width = cols * CELL_SIZE + 40
+    const height = rows * CELL_SIZE + 40
 
-const page = pdf.addPage([width,height])
+    const page = pdf.addPage([width, height])
 
-for(let y=0;y<rows;y++){
-for(let x=0;x<cols;x++){
+    for(let y=0; y<rows; y++){
+      for(let x=0; x<cols; x++){
 
-const symbol = grid[y][x]
+        let symbol = grid[y][x]
 
-const posX = 50 + x * CELL_SIZE
-const posY = height - (50 + y * CELL_SIZE)
+        // 🔥 zabezpieczenie
+        if(!symbol || typeof symbol !== "string"){
+          symbol = "."
+        }
 
-page.drawRectangle({
-x: posX,
-y: posY,
-width: CELL_SIZE,
-height: CELL_SIZE,
-borderWidth: (x%10===0||y%10===0)?1:0.2
-})
+        const posX = 20 + x * CELL_SIZE
+        const posY = height - (20 + y * CELL_SIZE)
 
-page.drawText(symbol,{
-x: posX + CELL_SIZE/4,
-y: posY + CELL_SIZE/4,
-size: CELL_SIZE * 0.6,
-font
-})
+        page.drawRectangle({
+          x: posX,
+          y: posY,
+          width: CELL_SIZE,
+          height: CELL_SIZE,
+          borderWidth: (x%10===0||y%10===0)?1:0.2
+        })
 
-}
-}
+        page.drawText(symbol,{
+          x: posX + 4,
+          y: posY + 4,
+          size: 10
+        })
 
-}
+      }
+    }
+  }
 
-const bytes = await pdf.save()
+  const bytes = await pdf.save()
 
-const filePath = path.resolve("outputs/result.pdf")
+  const filePath = path.resolve("outputs/result.pdf")
 
-fs.writeFileSync(filePath, bytes)
+  fs.writeFileSync(filePath, bytes)
 
-return filePath
+  console.log("PDF SIZE:", bytes.length)
 
+  return filePath
 }
