@@ -18,6 +18,9 @@ socket.on("progress", data => {
 })
 
 async function upload() {
+  
+  const fromPage = document.getElementById("fromPage").value
+  const toPage = document.getElementById("toPage").value
 
   try {
 
@@ -62,6 +65,8 @@ async function upload() {
     const blob = await new Promise(resolve => canvas.toBlob(resolve))
 
     const form = new FormData()
+    form.append("fromPage", fromPage)
+    form.append("toPage", toPage)
     form.append("file", blob, "page.png")
     form.append("format", format)
     form.append("socketId", socketId)
