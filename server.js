@@ -38,11 +38,17 @@ const result=[]
 
 for(const page of pages){
 
-const grid=await detectGrid(page)
+const grid = await detectGrid(page)
 
-const cells=await extractCells(page,grid)
+console.log("GRID:", grid)
 
-total+=cells.length*cells[0].length
+const cells = await extractCells(page,grid)
+
+if(!cells || cells.length === 0){
+throw new Error("Cell extraction failed – grid not detected")
+}
+
+total += cells.length * cells[0].length
 
 const matrix=await hashSymbols(cells,(n)=>{
 
