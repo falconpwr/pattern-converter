@@ -1,3 +1,9 @@
+if(!grid.cell || grid.cell < 8){
+throw new Error("Invalid grid cell size")
+}
+
+console.log("FINAL CELL:", cell)
+
 const sharp=require("sharp")
 
 module.exports=async function(image){
