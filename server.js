@@ -62,7 +62,7 @@ for (let i = fromPage - 1; i < toPage; i++) {
   io.emit('progress', 40);
 
   // ===== SYMBOLE =====
-  const { grid, counts } = buildSymbolMap(allCells, gridData.cell);
+  const { grid, counts } = buildSymbolMap(allCells);
 
   io.emit('progress', 70);
 
