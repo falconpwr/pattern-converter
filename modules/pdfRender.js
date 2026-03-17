@@ -1,9 +1,12 @@
 const fs = require('fs');
 const { createCanvas } = require('canvas');
-const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
 
 async function renderPDF(filePath) {
-  const loadingTask = pdfjsLib.getDocument(filePath);
+  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+
+  const data = new Uint8Array(fs.readFileSync(filePath));
+
+  const loadingTask = pdfjsLib.getDocument({ data });
   const pdfDoc = await loadingTask.promise;
 
   const pages = [];
@@ -28,12 +31,9 @@ async function renderPDF(filePath) {
       canvas.height
     );
 
-    // ===== TEXT (LEGENDA) =====
     const textContent = await page.getTextContent();
 
-    const text = textContent.items
-      .map(item => item.str)
-      .join(' ');
+    const text = textContent.items.map(i => i.str).join(' ');
 
     pages.push({
       width: canvas.width,
