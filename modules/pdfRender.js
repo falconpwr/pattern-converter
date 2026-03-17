@@ -1,15 +1,20 @@
 const fs = require('fs');
-const { createCanvas, Image } = require('canvas');
+const { createCanvas } = require('canvas');
 
 async function renderPDF(filePath) {
   const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
   const data = new Uint8Array(fs.readFileSync(filePath));
 
-  const loadingTask = pdfjsLib.getDocument({ data });
+  const loadingTask = pdfjsLib.getDocument({
+    data,
+    useWorkerFetch: false,
+    isEvalSupported: false,
+    useSystemFonts: true
+  });
+
   const pdfDoc = await loadingTask.promise;
 
-  // 🔥 CanvasFactory (tylko do render)
   const CanvasFactory = {
     create: (width, height) => {
       const canvas = createCanvas(width, height);
@@ -25,9 +30,6 @@ async function renderPDF(filePath) {
       canvasAndContext.context = null;
     }
   };
-
-  // 🔥 Image patch (KLUCZ DO drawImage crasha)
-  pdfjsLib.GlobalWorkerOptions.workerSrc = null;
 
   const pages = [];
 
