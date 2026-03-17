@@ -15,7 +15,7 @@ function detectCellSize(){
 
 const scores = []
 
-for(let size=10; size<=40; size++){
+for(let size=12; size<=40; size++){
 
 let diff = 0
 let count = 0
@@ -41,15 +41,28 @@ score: diff / count
 
 }
 
-// wybieramy najlepszy match (najmniejsza różnica)
+// 🔥 wybierz kilka najlepszych i weź największy sensowny
 scores.sort((a,b)=>a.score-b.score)
 
-return scores[0].size
+// zamiast najlepszego, bierz medianę z top 5
+const best = scores.slice(0,5)
+
+const avg = best.reduce((s,x)=>s+x.size,0)/best.length
+
+return Math.round(avg)
 
 }
 
-const cell = detectCellSize()
+const rawCell = detectCellSize()
 
+let cell = rawCell
+
+if(cell < 14){
+cell = Math.round(cell * 2)
+}
+
+
+  
 const cols = Math.floor(width / cell)
 const rows = Math.floor(height / cell)
 
