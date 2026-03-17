@@ -1,102 +1,84 @@
-const express = require("express")
-const multer = require("multer")
-const http = require("http")
-const { Server } = require("socket.io")
-const path = require("path")
-const fs = require("fs")
+const express = require('express');
+const multer = require('multer');
+const http = require('http');
+const socketIo = require('socket.io');
 
-const renderPDF = require("./modules/pdfRender")
-const detectGrid = require("./modules/gridDetect")
-const extractCells = require("./modules/cellExtract")
-const hashSymbols = require("./modules/symbolHash")
-const buildPDF = require("./modules/pdfBuilder")
-const buildXSD = require("./modules/xsdBuilder")
+const { renderPDF } = require('./modules/pdfRender');
+const { detectGrid } = require('./modules/gridDetect');
+const { extractCells } = require('./modules/cellExtract');
+const { buildSymbolMap } = require('./modules/symbolHash');
+const { parseLegend } = require('./modules/legendParser');
+const { matchSymbolsToLegend } = require('./modules/symbolMatcher');
 
-const upload = multer({ dest: "uploads/" })
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 
-const app = express()
-const server = http.createServer(app)
-const io = new Server(server)
+const upload = multer({ dest: 'uploads/' });
 
-app.use(express.static("public"))
+app.use(express.static('public'));
 
-app.post("/convert", upload.single("file"), async (req, res) => {
-const fromPage = parseInt(req.body.fromPage) || 1
-const toPage = parseInt(req.body.toPage) || fromPage
-  try {
+app.post('/upload', upload.single('file'), async (req, res) => {
+  const filePath = req.file.path;
 
-    const socket = io.sockets.sockets.get(req.body.socketId)
-    const format = req.body.format
+  const fromPage = parseInt(req.body.fromPage);
+  const toPage = parseInt(req.body.toPage);
 
-    const pages = await renderPDF(req.file.path)
+  const legendFrom = parseInt(req.body.legendFrom);
+  const legendTo = parseInt(req.body.legendTo);
 
-    if (!pages || pages.length === 0) {
-      throw new Error("PDF rendering failed")
-    }
+  // render wszystkich potrzebnych stron
+  const pages = await renderPDF(filePath);
 
-    let processed = 0
-    let total = 0
+  // ===== WZÓR =====
+  let allCells = [];
+  let gridData;
 
-    const result = []
+  for (let i = fromPage - 1; i < toPage; i++) {
+    const page = pages[i];
 
-    for (const page of pages) {
+    gridData = detectGrid(page);
 
-      const grid = await detectGrid(page)
-      console.log("GRID:", grid)
+    const cells = extractCells(
+      page.data,
+      page.width,
+      page.height,
+      gridData
+    );
 
-      if (!grid || !grid.cell) {
-        throw new Error("Grid detection failed")
-      }
-
-      const cells = await extractCells(page, grid)
-
-      if (!cells || cells.length === 0 || !cells[0]) {
-        throw new Error("Cell extraction failed – grid not detected")
-      }
-
-      total += cells.length * cells[0].length
-
-      console.log("START HASH")
-
-      const matrix = await hashSymbols(cells, (n) => {
-        processed += n
-
-        if (socket) {
-          socket.emit("progress", { processed, total })
-        }
-      })
-
-      console.log("END HASH")
-
-      result.push(matrix)
-    }
-
-    let file
-
-    if (format === "xsd") {
-      file = await buildXSD(result)
-    } else {
-      file = await buildPDF(result)
-    }
-
-    console.log("OUTPUT FILE:", file)
-
-    if (!file || !fs.existsSync(file)) {
-      throw new Error("Output file not created")
-    }
-
-    res.sendFile(path.resolve(file))
-
-  } catch (err) {
-
-    console.error("Conversion error:", err.stack)
-
-    res.status(500).send(err.stack)
-
+    allCells = allCells.concat(cells);
   }
 
-})
+  io.emit('progress', 40);
 
-server.listen(process.env.PORT || 3000, () => {
-  console.log("Server started")
-})
+  // ===== SYMBOLE =====
+  const { grid, counts } = buildSymbolMap(allCells, gridData.cell);
+
+  io.emit('progress', 70);
+
+  // ===== LEGENDA =====
+  let legendText = '';
+
+  for (let i = legendFrom - 1; i < legendTo; i++) {
+    if (pages[i].text) {
+      legendText += pages[i].text + '\n';
+    }
+  }
+
+  const legend = parseLegend(legendText);
+
+  io.emit('progress', 85);
+
+  // ===== MATCH =====
+  const symbolToDMC = matchSymbolsToLegend(counts, legend);
+
+  console.log('DOPASOWANIE:', symbolToDMC);
+
+  io.emit('progress', 100);
+
+  res.send('DONE');
+});
+
+server.listen(3000, () => {
+  console.log('Server running on http://localhost:3000');
+});
