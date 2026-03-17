@@ -91,4 +91,5 @@ res.status(500).send("Conversion failed")
 
 server.listen(process.env.PORT||3000,()=>{
 console.log("Server started")
+res.send("DONE")
 })
