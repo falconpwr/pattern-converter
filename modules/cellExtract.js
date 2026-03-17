@@ -43,7 +43,7 @@ module.exports = async function(image, grid){
 
     cells.push(row)
   }
-
+  console.log("CELL SAMPLE:", cells[0][0].slice(0,20))
   console.log("CELLS DONE")
 
   return cells
