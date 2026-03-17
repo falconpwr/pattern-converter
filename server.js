@@ -56,15 +56,12 @@ app.post("/convert", upload.single("file"), async (req, res) => {
 
       total += cells.length * cells[0].length
 
-      const matrix = await hashSymbols(cells, (n) => {
-
-        processed += n
-
-        if (socket) {
-          socket.emit("progress", { processed, total })
-        }
-
-      })
+      console.log("START HASH")
+      
+      const matrix = cells // 🔥 pomijamy hash
+      
+      console.log("END HASH")
+                                      )
 
       result.push(matrix)
     }
