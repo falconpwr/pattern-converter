@@ -9,7 +9,7 @@ module.exports = async function(pages){
   const pdf = await PDFDocument.create()
 
   // bezpieczna czcionka
-  const font = await pdf.embedFont(PDFDocument.PDFFont ? PDFDocument.PDFFont : await pdf.embedStandardFont("Helvetica"))
+  const font = await pdf.embedStandardFont("Helvetica")
 
   if(!fs.existsSync("outputs")){
     fs.mkdirSync("outputs")
