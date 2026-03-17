@@ -1,18 +1,8 @@
 const fs = require('fs');
-const pdf = require('pdf-parse');
 const { createCanvas } = require('canvas');
 const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
 
 async function renderPDF(filePath) {
-  const dataBuffer = fs.readFileSync(filePath);
-
-  // ===== TEXT (do legendy) =====
-  const parsed = await pdf(dataBuffer);
-
-  // rozbijamy tekst na strony (pdf-parse daje całość, więc heurystyka)
-  const textPages = parsed.text.split('\f');
-
-  // ===== RENDER OBRAZÓW =====
   const loadingTask = pdfjsLib.getDocument(filePath);
   const pdfDoc = await loadingTask.promise;
 
@@ -38,11 +28,18 @@ async function renderPDF(filePath) {
       canvas.height
     );
 
+    // ===== TEXT (LEGENDA) =====
+    const textContent = await page.getTextContent();
+
+    const text = textContent.items
+      .map(item => item.str)
+      .join(' ');
+
     pages.push({
       width: canvas.width,
       height: canvas.height,
       data: imageData.data,
-      text: textPages[i - 1] || ''
+      text
     });
   }
 
