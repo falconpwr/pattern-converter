@@ -12,14 +12,13 @@ module.exports = async function(cells, progress){
 
   const result = []
 
-  // 🔤 zestaw symboli (300+ znaków)
   const SYMBOLS = generateSymbols(400)
 
-  for(let y=0; y<rows; y++){
+  for(let y = 0; y < rows; y++){
 
     const row = []
 
-    for(let x=0; x<cols; x++){
+    for(let x = 0; x < cols; x++){
 
       const cell = cells[y][x]
 
@@ -28,12 +27,11 @@ module.exports = async function(cells, progress){
         continue
       }
 
-      // 🔥 szybki hash (bezpieczny)
       let hash = ""
 
       const len = Math.min(20, cell.length)
 
-      for(let i=0; i<len; i++){
+      for(let i = 0; i < len; i++){
         hash += cell[i] + "-"
       }
 
@@ -43,16 +41,13 @@ module.exports = async function(cells, progress){
       }
 
       row.push(map.get(hash))
-
     }
 
     result.push(row)
 
-    // 🔥 progress co wiersz
     if(progress){
       progress(cols)
     }
-
   }
 
   console.log("SYMBOLS:", map.size)
@@ -61,21 +56,19 @@ module.exports = async function(cells, progress){
 }
 
 
-// 🔤 generator symboli (obsługa do 300+)
 function generateSymbols(n){
 
   const symbols = []
 
-  // ASCII (czytelne)
-  for(let i=33; i<=126; i++){
+  // ASCII
+  for(let i = 33; i <= 126; i++){
     symbols.push(String.fromCharCode(i))
   }
 
-  // rozszerzone Unicode (bezpieczne znaki)
-  for(let i=0; i<n; i++){
-    symbols.push("§" + i) // fallback (zawsze działa)
+  // fallback (bez limitu)
+  for(let i = 0; i < n; i++){
+    symbols.push("§" + i)
   }
 
   return symbols
-
 }
