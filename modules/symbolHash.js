@@ -1,4 +1,4 @@
-module.exports = async function (cells, progress) {
+module.exports = async function(cells, progress){
 
   const map = new Map()
   let id = 0
@@ -8,48 +8,45 @@ module.exports = async function (cells, progress) {
 
   const result = []
 
-  for (let y = 0; y < rows; y++) {
+  for(let y=0;y<rows;y++){
 
-    const row = []
+    const row=[]
 
-    for (let x = 0; x < cols; x++) {
+    for(let x=0;x<cols;x++){
 
       const cell = cells[y][x]
 
-      // 🔥 bierzemy ŚREDNI kolor zamiast raw hash
-      let r = 0, g = 0, b = 0
-      const pixels = cell.length / 4
+      // 🔥 LEPSZY HASH – średnia koloru
+      let r=0,g=0,b=0
 
-      for (let i = 0; i < cell.length; i += 4) {
-        r += cell[i]
-        g += cell[i + 1]
-        b += cell[i + 2]
+      for(let i=0;i<cell.length;i+=4){
+        r+=cell[i]
+        g+=cell[i+1]
+        b+=cell[i+2]
       }
 
-      r = Math.round(r / pixels)
-      g = Math.round(g / pixels)
-      b = Math.round(b / pixels)
+      const count = cell.length/4
 
-      // 🔥 KWANTYZACJA (KLUCZ)
-      const step = 32   // możesz zmienić na 16 dla większej dokładności
+      r = Math.round(r/count)
+      g = Math.round(g/count)
+      b = Math.round(b/count)
 
-      r = Math.round(r / step) * step
-      g = Math.round(g / step) * step
-      b = Math.round(b / step) * step
+      const hash = `${r}-${g}-${b}`
 
-      const hash = `${r},${g},${b}`
-
-      if (!map.has(hash)) {
+      if(!map.has(hash)){
         map.set(hash, String.fromCharCode(33 + id))
         id++
       }
 
       row.push(map.get(hash))
+
     }
 
     result.push(row)
 
-    if (progress) progress(cols)
+    if(progress){
+      progress(cols)
+    }
   }
 
   console.log("SYMBOLS:", map.size)
