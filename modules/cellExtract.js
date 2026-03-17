@@ -1,24 +1,38 @@
-if(!grid.cell || grid.cell < 8){
+const sharp = require("sharp")
+
+module.exports = async function(image, grid){
+
+if(!grid || !grid.cell || grid.cell < 8){
 throw new Error("Invalid grid cell size")
 }
 
-console.log("FINAL CELL:", cell)
+const cells = []
 
-const sharp=require("sharp")
+for(let y=0;y<grid.rows;y++){
 
-module.exports=async function(image){
+const row=[]
 
-const meta=await sharp(image).metadata()
+for(let x=0;x<grid.cols;x++){
 
-const cell=20
+const buf = await sharp(image)
+.extract({
+left: x * grid.cell,
+top: y * grid.cell,
+width: grid.cell,
+height: grid.cell
+})
+.resize(16,16)
+.raw()
+.toBuffer()
 
-const cols=Math.floor(meta.width/cell)
-const rows=Math.floor(meta.height/cell)
+row.push(buf)
 
-return{
-cell,
-cols,
-rows
 }
+
+cells.push(row)
+
+}
+
+return cells
 
 }
