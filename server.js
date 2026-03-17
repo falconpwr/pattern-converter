@@ -75,7 +75,9 @@ file=await buildXSD(result)
 else
 file=await buildPDF(result)
 
-res.download(file)
+console.log("OUTPUT FILE:", file)
+
+res.sendFile(require("path").resolve(file))
 
 }catch(err){
 
