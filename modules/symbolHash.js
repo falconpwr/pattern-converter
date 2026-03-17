@@ -1,42 +1,48 @@
-const generateSymbols=require("./symbolSet")
+module.exports = async function(cells, progress){
 
-const SYMBOLS=generateSymbols()
+const map = new Map()
+let id = 0
 
-module.exports=async function(cells,progress){
+const rows = cells.length
+const cols = cells[0].length
 
-const dict={}
-let index=0
+const result = []
 
-const matrix=[]
+for(let y=0;y<rows;y++){
 
-for(const row of cells){
+const row=[]
 
-const r=[]
+for(let x=0;x<cols;x++){
 
-for(const c of row){
+const cell = cells[y][x]
 
-let sum=0
+// 🔥 szybki hash (pierwsze 20 bajtów)
+let hash = ""
 
-for(let i=0;i<c.length;i+=8){
-sum+=c[i]
+for(let i=0;i<20;i++){
+hash += cell[i]
 }
 
-const hash=sum.toString()
-
-if(!dict[hash]){
-dict[hash]=SYMBOLS[index++]
+if(!map.has(hash)){
+map.set(hash, String.fromCharCode(33 + id))
+id++
 }
 
-r.push(dict[hash])
-
-}
-
-matrix.push(r)
-
-if(progress)progress(100)
+row.push(map.get(hash))
 
 }
 
-return matrix
+result.push(row)
+
+// 🔥 progress co wiersz (zamiast każdej kratki)
+if(progress){
+progress(cols)
+}
+
+}
+
+console.log("SYMBOLS:", map.size)
+
+return result
 
 }
