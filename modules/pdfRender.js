@@ -1,12 +1,43 @@
 const fs = require('fs');
-const { createCanvas } = require('canvas');
+const { createCanvas, Image } = require('canvas');
 
 async function renderPDF(filePath) {
   const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
+  // 🔥 PATCH dla Node
+  const CanvasFactory = {
+    create: (width, height) => {
+      const canvas = createCanvas(width, height);
+      const context = canvas.getContext('2d');
+      return { canvas, context };
+    },
+    reset: (canvasAndContext, width, height) => {
+      canvasAndContext.canvas.width = width;
+      canvasAndContext.canvas.height = height;
+    },
+    destroy: (canvasAndContext) => {
+      canvasAndContext.canvas = null;
+      canvasAndContext.context = null;
+    }
+  };
+
+  const ImageFactory = {
+    create: (width, height) => {
+      const img = new Image();
+      img.width = width;
+      img.height = height;
+      return img;
+    }
+  };
+
   const data = new Uint8Array(fs.readFileSync(filePath));
 
-  const loadingTask = pdfjsLib.getDocument({ data });
+  const loadingTask = pdfjsLib.getDocument({
+    data,
+    CanvasFactory,
+    ImageFactory
+  });
+
   const pdfDoc = await loadingTask.promise;
 
   const pages = [];
@@ -16,12 +47,15 @@ async function renderPDF(filePath) {
 
     const viewport = page.getViewport({ scale: 2 });
 
-    const canvas = createCanvas(viewport.width, viewport.height);
-    const context = canvas.getContext('2d');
+    const { canvas, context } = CanvasFactory.create(
+      viewport.width,
+      viewport.height
+    );
 
     await page.render({
       canvasContext: context,
-      viewport
+      viewport,
+      canvasFactory: CanvasFactory
     }).promise;
 
     const imageData = context.getImageData(
