@@ -54,6 +54,9 @@ const bytes=await pdf.save()
 
 fs.writeFileSync("pattern.pdf",bytes)
 
+await fs.writeFile(...)
+return "outputs/result.pdf"
+
 return "pattern.pdf"
 
 }
