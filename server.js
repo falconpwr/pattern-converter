@@ -48,6 +48,10 @@ if(!cells || cells.length === 0){
 throw new Error("Cell extraction failed – grid not detected")
 }
 
+if(!cells || cells.length === 0 || !cells[0]){
+throw new Error("Cell extraction failed – grid not detected")
+}
+
 total += cells.length * cells[0].length
 
 const matrix=await hashSymbols(cells,(n)=>{
