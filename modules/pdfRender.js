@@ -1,52 +1,61 @@
 const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
 
 async function renderPDF(filePath) {
-  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const outputDir = path.join(__dirname, '../temp');
 
-  const data = new Uint8Array(fs.readFileSync(filePath));
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir);
+  }
 
-  const loadingTask = pdfjsLib.getDocument({
-    data,
-    useWorkerFetch: false,
-    isEvalSupported: false,
-    disableFontFace: true,
-    disableRange: true,
-    disableStream: true
-  });
+  const outputPrefix = path.join(outputDir, 'page');
 
-  const pdfDoc = await loadingTask.promise;
+  // 🔥 KONWERSJA PDF → PNG
+  execSync(`pdftoppm -png -r 150 "${filePath}" "${outputPrefix}"`);
+
+  // znajdź wygenerowane pliki
+  const files = fs
+    .readdirSync(outputDir)
+    .filter(f => f.startsWith('page') && f.endsWith('.png'))
+    .sort((a, b) => {
+      const numA = parseInt(a.match(/page-(\d+)/)[1]);
+      const numB = parseInt(b.match(/page-(\d+)/)[1]);
+      return numA - numB;
+    });
 
   const pages = [];
 
-  for (let i = 1; i <= pdfDoc.numPages; i++) {
-    const page = await pdfDoc.getPage(i);
+  for (let file of files) {
+    const fullPath = path.join(outputDir, file);
 
-    const viewport = page.getViewport({ scale: 2 });
+    const buffer = fs.readFileSync(fullPath);
 
-    // ❗ FAKE canvas (bez drawImage)
-    const width = Math.floor(viewport.width);
-    const height = Math.floor(viewport.height);
+    const { createCanvas, loadImage } = require('canvas');
 
-    // pusty buffer (biały)
-    const dataArr = new Uint8ClampedArray(width * height * 4);
+    const img = await loadImage(buffer);
 
-    for (let j = 0; j < dataArr.length; j += 4) {
-      dataArr[j] = 255;
-      dataArr[j + 1] = 255;
-      dataArr[j + 2] = 255;
-      dataArr[j + 3] = 255;
-    }
+    const canvas = createCanvas(img.width, img.height);
+    const ctx = canvas.getContext('2d');
 
-    // 🔥 tekst działa normalnie
-    const textContent = await page.getTextContent();
-    const text = textContent.items.map(i => i.str).join(' ');
+    ctx.drawImage(img, 0, 0);
+
+    const imageData = ctx.getImageData(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
 
     pages.push({
-      width,
-      height,
-      data: dataArr,
-      text
+      width: canvas.width,
+      height: canvas.height,
+      data: imageData.data,
+      text: '' // tekst zrobimy osobno (opcjonalnie)
     });
+
+    // cleanup pojedynczego pliku
+    fs.unlinkSync(fullPath);
   }
 
   return pages;
