@@ -1,50 +1,33 @@
-const sharp = require("sharp")
+function extractCells(imageData, width, height, grid) {
+  const { cell, cols, rows } = grid;
 
-module.exports = async function(image, grid){
+  const cells = [];
+  const margin = Math.floor(cell * 0.25);
 
-  if(!grid || !grid.cell){
-    throw new Error("Invalid grid")
-  }
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
 
-  const { data, info } = await sharp(image)
-    .raw()
-    .toBuffer({ resolveWithObject: true })
+      const pixels = [];
 
-  const width = info.width
-  const height = info.height
+      for (let y = margin; y < cell - margin; y++) {
+        for (let x = margin; x < cell - margin; x++) {
 
-  const cellSize = grid.cell
+          const px = ((r * cell + y) * width + (c * cell + x)) * 4;
 
-  const cells = []
-
-  for(let y = 0; y < grid.rows; y++){
-
-    const row = []
-
-    for(let x = 0; x < grid.cols; x++){
-
-      const cell = []
-
-      for(let cy = 0; cy < cellSize; cy++){
-        for(let cx = 0; cx < cellSize; cx++){
-
-          const px = x * cellSize + cx
-          const py = y * cellSize + cy
-
-          if(px >= width || py >= height) continue
-
-          const idx = (py * width + px) * 3 // RGB
-          cell.push(data[idx]) // tylko jeden kanał wystarczy
+          pixels.push(
+            imageData[px],
+            imageData[px+1],
+            imageData[px+2],
+            imageData[px+3]
+          );
         }
       }
 
-      row.push(cell)
+      cells.push(pixels);
     }
-
-    cells.push(row)
   }
-  console.log("CELL SAMPLE:", cells[0][0].slice(0,20))
-  console.log("CELLS DONE")
 
-  return cells
+  return cells;
 }
+
+module.exports = { extractCells };
