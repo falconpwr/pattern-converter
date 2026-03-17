@@ -1,8 +1,4 @@
-module.exports = async function(cells, progress){
-
-  if(!cells || cells.length === 0 || !cells[0]){
-    throw new Error("Invalid cells input")
-  }
+module.exports = async function (cells, progress) {
 
   const map = new Map()
   let id = 0
@@ -12,31 +8,39 @@ module.exports = async function(cells, progress){
 
   const result = []
 
-  const SYMBOLS = generateSymbols(400)
-
-  for(let y = 0; y < rows; y++){
+  for (let y = 0; y < rows; y++) {
 
     const row = []
 
-    for(let x = 0; x < cols; x++){
+    for (let x = 0; x < cols; x++) {
 
       const cell = cells[y][x]
 
-      if(!cell){
-        row.push("?")
-        continue
+      // 🔥 bierzemy ŚREDNI kolor zamiast raw hash
+      let r = 0, g = 0, b = 0
+      const pixels = cell.length / 4
+
+      for (let i = 0; i < cell.length; i += 4) {
+        r += cell[i]
+        g += cell[i + 1]
+        b += cell[i + 2]
       }
 
-      let hash = ""
+      r = Math.round(r / pixels)
+      g = Math.round(g / pixels)
+      b = Math.round(b / pixels)
 
-      const len = Math.min(20, cell.length)
+      // 🔥 KWANTYZACJA (KLUCZ)
+      const step = 32   // możesz zmienić na 16 dla większej dokładności
 
-      for(let i = 0; i < len; i++){
-        hash += cell[i] + "-"
-      }
+      r = Math.round(r / step) * step
+      g = Math.round(g / step) * step
+      b = Math.round(b / step) * step
 
-      if(!map.has(hash)){
-        map.set(hash, SYMBOLS[id] || "?")
+      const hash = `${r},${g},${b}`
+
+      if (!map.has(hash)) {
+        map.set(hash, String.fromCharCode(33 + id))
         id++
       }
 
@@ -45,30 +49,10 @@ module.exports = async function(cells, progress){
 
     result.push(row)
 
-    if(progress){
-      progress(cols)
-    }
+    if (progress) progress(cols)
   }
 
   console.log("SYMBOLS:", map.size)
 
   return result
-}
-
-
-function generateSymbols(n){
-
-  const symbols = []
-
-  // ASCII
-  for(let i = 33; i <= 126; i++){
-    symbols.push(String.fromCharCode(i))
-  }
-
-  // fallback (bez limitu)
-  for(let i = 0; i < n; i++){
-    symbols.push("§" + i)
-  }
-
-  return symbols
 }
